@@ -1,10 +1,39 @@
 require 'formula'
 require 'hardware'
 
+class MongoClient <Formula
+  homepage 'http://mongodb.com/'
+  url 'http://downloads.mongodb.org/src/mongodb-src-r1.2.2.tar.gz'
+  md5 '278f8d234c6d1e8bcca6301d60876787'
+
+  depends_on 'scons'
+  depends_on 'boost'
+  depends_on 'pcre'
+
+  def patches
+    DATA
+  end
+end
+
+
 class Mongodb <Formula
   homepage 'http://www.mongodb.org/'
 
   aka :mongo
+
+  def options
+    [
+      ["--cxx", "build working C++ client library"],
+    ]
+  end
+
+  if ARGV.include? '--cxx'
+    # Deps needed for building libmongoclient.a
+    MongoClient.deps.each do |dep|
+      depends_on dep
+    end
+  end
+
 
   if Hardware.is_64_bit? and not ARGV.include? '--32bit'
     url 'http://downloads.mongodb.org/osx/mongodb-osx-x86_64-1.4.4.tgz'
@@ -21,6 +50,30 @@ class Mongodb <Formula
   end
 
   def install
+    # Dont install the libmongoclient and header files from this tarbal - it
+    # wont link with the version of boost in homebrew
+    File.unlink 'lib/libmongoclient.a'
+    FileUtils.rm_rf 'include/mongo'
+
+    # If they asked for the lib, install it.
+    if ARGV.include? '--cxx'
+      MongoClient.new.brew {
+        system "scons",
+                "--release",
+                "--noshell",
+                "--release",
+                "--nojni",
+                "mongoclient"
+
+        #include.install(Dir['include/*'])
+        lib.install('libmongoclient.a')
+
+        [ "", "util/", "db/" , "client/" ].each {|id|
+          (include+"mongo/#{id}").install(Dir["#{id}*.h"])
+        }
+      }
+    end
+
     # Copy the prebuilt binaries to prefix
     system "cp -prv * #{prefix}"
 
@@ -31,6 +84,7 @@ class Mongodb <Formula
     # Write the configuration files and launchd script
     (prefix+'mongod.conf').write mongodb_conf
     (prefix+'org.mongodb.mongod.plist').write startup_plist
+
   end
 
   def caveats; <<-EOS
@@ -45,6 +99,8 @@ If this is an upgrade and you already have the org.mongodb.mongod.plist loaded:
 
 Or start it manually:
     mongod run --config #{prefix}/mongod.conf
+
+To get the C++ client library, (re)install with the `--cxx' option
 EOS
   end
 
@@ -90,3 +146,22 @@ EOS
 EOS
   end
 end
+
+
+__END__
+diff --git a/SConstruct b/SConstruct
+index 5d0b835..5029467 100644
+--- a/SConstruct
++++ b/SConstruct
+@@ -260,8 +260,8 @@ if ( usesm and usejvm ):
+     print( "can't say usesm and usejvm at the same time" )
+     Exit(1)
+ 
+-if ( not ( usesm or usejvm or usev8 ) ):
+-    usesm = True
++#if ( not ( usesm or usejvm or usev8 ) ):
++#    usesm = True
+ 
+ if GetOption( "extrapath" ) is not None:
+     for x in GetOption( "extrapath" ).split( "," ):
+
