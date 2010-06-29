@@ -27,7 +27,7 @@ class Lua <Formula
     # Fix paths in the .pc
     inreplace 'etc/lua.pc' do |s|
       s.gsub! "prefix= /usr/local", "prefix=#{HOMEBREW_PREFIX}"
-      s.gsub! "INSTALL_MAN= ${prefix}/man/man1", "INSTALL_MAN= ${prefix}/share/man/man1"
+      s.gsub! "INSTALL_MAN= ${prefix}/man/man1", "INSTALL_MAN= ${man1}"
     end
 
     system "make", "macosx", "INSTALL_TOP=#{prefix}", "INSTALL_MAN=#{man1}"
