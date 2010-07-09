@@ -1,7 +1,7 @@
 require 'formula'
 
 class Npm <Formula
-  url 'http://github.com/isaacs/npm/tarball/v0.1.19'
+  url 'http://registry.npmjs.org/npm/-/npm-0.1.19.tgz'
   head 'git://github.com/isaacs/npm.git'
   homepage 'http://github.com/isaacs/npm'
   md5 '886e78f5937ff3409c062cf8fd305f7c'
