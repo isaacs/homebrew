@@ -54,7 +54,7 @@ class Tty
       escape "4;#{n}"
     end
     def escape n
-      "\033[#{n}m" if $stdout.tty?
+      "\033[40;#{n}m" if $stdout.tty?
     end
   end
 end
