@@ -1,36 +1,48 @@
 require 'formula'
 
 class Npm <Formula
-  url 'https://github.com/isaacs/npm/tarball/v0.2.11-5'
+  url 'http://registry.npmjs.org/npm/-/npm-0.2.12-1.tgz'
   homepage 'http://npmjs.org/'
-  md5 '7f62aa24794a805d8d61da93786e3d05'
+  sha1 'a6a1d796735ac94fac62152e1b610b0041317703'
+  md5 '861342c6c93844d7d70f807623ae87e7'
   head 'git://github.com/isaacs/npm.git'
 
   depends_on 'node'
 
-  skip_clean 'share/npm/bin'
-
   def executable; <<-EOS
 #!/bin/sh
+export npm_config_globalconfig=#{npmrc}
 exec "#{libexec}/cli.js" "$@"
 EOS
+  end
+
+  def bin
+    HOMEBREW_PREFIX+"bin"
+  end
+
+  def share_man
+    HOMEBREW_PREFIX+"share/man"
+  end
+
+  def npmrc
+    HOMEBREW_PREFIX+"etc/npmrc"
   end
 
   def node_lib
     HOMEBREW_PREFIX+"lib/node"
   end
 
-  def share_bin
-    HOMEBREW_PREFIX+"share/npm/bin"
+  def globalconfig; <<-EOS
+root = #{node_lib}
+binroot = #{bin}
+manroot = #{share_man}
+EOS
   end
+
 
   def install
     # Set a root & binroot that won't get wiped between updates
-    share_bin.mkpath
-    inreplace 'lib/utils/default-config.js' do |s|
-      s.gsub! /, binroot.*$/, ", binroot : \"#{share_bin}\""
-      s.gsub! /, root.*$/,    ", root : \"#{node_lib}\""
-    end
+    bin.mkpath
 
     prefix.install ["LICENSE", "README.md"]
     doc.install Dir["doc/*"]
@@ -53,26 +65,33 @@ EOS
     # install the wrapper executable
     (bin+"npm").write executable
 
+    # install the global config overrides
+    npmrc.write globalconfig
+    (prefix+'etc').install npmrc
+
     # bash-completion
     (prefix+'etc/bash_completion.d').install libexec+'npm-completion.sh'
   end
 
   def caveats; <<-EOS.undent
-    npm will install binaries to:
-      #{share_bin}
 
-    You may want to add this to your PATH.
+    npm will install binaries to:
+      #{bin}
+    Add this to your PATH.
 
     npm will install libraries to:
-      #{node_lib}/.npm
-
-    To manually remove libraries installed by npm, delete this (hidden!) folder.
-
-    npm will also symlink libraries to:
       #{node_lib}
+    Add this to your NODE_PATH.
 
-    You will want to add this to your NODE_PATH if you wish to
-    require libraries without a path.
+    npm will install man pages to:
+      #{share_man}
+    Add this to your MANPATH.
+
+    To install npm for programmatic use (require("npm")) do:
+      npm install npm
+
+    You may change these settings using the `npm config` command.
+
     EOS
   end
 end
