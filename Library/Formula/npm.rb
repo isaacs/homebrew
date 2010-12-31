@@ -1,96 +1,77 @@
 require 'formula'
 
 class Npm <Formula
-  url 'http://registry.npmjs.org/npm/-/npm-0.2.12-1.tgz'
+  url 'http://registry.npmjs.org/npm/-/npm-0.2.13-3.tgz'
+  sha1 'a3588e2815e04d12e5115a69fa6f1cf598bcb4aa'
+
   homepage 'http://npmjs.org/'
-  sha1 'a6a1d796735ac94fac62152e1b610b0041317703'
-  md5 '861342c6c93844d7d70f807623ae87e7'
   head 'git://github.com/isaacs/npm.git'
 
   depends_on 'node'
 
-  def executable; <<-EOS
-#!/bin/sh
-export npm_config_globalconfig=#{npmrc}
-exec "#{libexec}/cli.js" "$@"
-EOS
+  skip_clean 'share/npm'
+
+  def config_binroot
+    HOMEBREW_PREFIX+"share/npm/bin"
   end
 
-  def bin
-    HOMEBREW_PREFIX+"bin"
+  def config_manroot
+    HOMEBREW_PREFIX+"share/npm/share/man"
   end
 
-  def share_man
-    HOMEBREW_PREFIX+"share/man"
-  end
-
-  def npmrc
-    HOMEBREW_PREFIX+"etc/npmrc"
-  end
-
-  def node_lib
-    HOMEBREW_PREFIX+"lib/node"
+  def config_root
+    HOMEBREW_PREFIX+"share/npm/lib"
   end
 
   def globalconfig; <<-EOS
-root = #{node_lib}
-binroot = #{bin}
-manroot = #{share_man}
+root = #{config_root}
+binroot = #{config_binroot}
+manroot = #{config_manroot}
 EOS
   end
 
 
   def install
     # Set a root & binroot that won't get wiped between updates
-    bin.mkpath
-
-    prefix.install ["LICENSE", "README.md"]
-    doc.install Dir["doc/*"]
-
-    # install all the required libs in libexec so `npm help` will work
-    libexec.install Dir["*"]
-
-    # add "npm-" prefix to man pages link them into the libexec man pages
-    man1.mkpath
-    Dir.chdir libexec + "man1" do
-      Dir["*"].each do |file|
-        if file == "npm.1"
-          ln_s "#{Dir.pwd}/#{file}", man1
-        else
-          ln_s "#{Dir.pwd}/#{file}", "#{man1}/npm-#{file}"
-        end
-      end
-    end
-
-    # install the wrapper executable
-    (bin+"npm").write executable
+    config_root.mkpath
+    config_manroot.mkpath
+    config_binroot.mkpath
 
     # install the global config overrides
-    npmrc.write globalconfig
-    (prefix+'etc').install npmrc
+    (libexec+'npmrc').write globalconfig
+    (prefix+"etc").install libexec+'npmrc'
 
     # bash-completion
-    (prefix+'etc/bash_completion.d').install libexec+'npm-completion.sh'
+    (prefix+'etc/bash_completion.d').install Dir['npm-completion.sh']
+
+    # now self-install
+    system "make dev"
   end
 
   def caveats; <<-EOS.undent
 
-    npm will install binaries to:
-      #{bin}
-    Add this to your PATH.
-
     npm will install libraries to:
-      #{node_lib}
+      #{config_root}
     Add this to your NODE_PATH.
 
+    npm will install binaries to:
+      #{config_binroot}
+    Add this to your PATH.
+
     npm will install man pages to:
-      #{share_man}
+      #{config_manroot}
     Add this to your MANPATH.
 
-    To install npm for programmatic use (require("npm")) do:
-      npm install npm
+    You may override these configuration settings using:
+      npm config
 
-    You may change these settings using the `npm config` command.
+    To fully uninstall npm, do this:
+      brew rm npm
+      npm cache clean
+      npm rm -rf npm
+
+    To remove all the files installed by npm ever, do this:
+      rm -rf #{HOMEBREW_PREFIX}/share/npm
 
     EOS
   end
