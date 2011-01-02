@@ -9,18 +9,18 @@ class Npm <Formula
 
   depends_on 'node'
 
-  skip_clean 'share/npm'
+  skip_clean 'npm'
 
   def config_binroot
-    HOMEBREW_PREFIX+"share/npm/bin"
+    HOMEBREW_PREFIX+"npm/bin"
   end
 
   def config_manroot
-    HOMEBREW_PREFIX+"share/npm/share/man"
+    HOMEBREW_PREFIX+"npm/share/man"
   end
 
   def config_root
-    HOMEBREW_PREFIX+"share/npm/lib"
+    HOMEBREW_PREFIX+"npm/lib"
   end
 
   def globalconfig; <<-EOS
@@ -49,6 +49,8 @@ EOS
   end
 
   def caveats; <<-EOS.undent
+    You will now need to set up some environment variables
+    to make npm work properly.
 
     npm will install libraries to:
       #{config_root}
@@ -65,14 +67,14 @@ EOS
     You may override these configuration settings using:
       npm config
 
-    To fully uninstall npm, do this:
+    To fully uninstall npm, leaving other node programs intact:
       brew rm npm
       npm cache clean
       npm rm -rf npm
 
-    To remove all the files installed by npm ever, do this:
-      rm -rf #{HOMEBREW_PREFIX}/share/npm
-
+    To fully remove all the files installed by npm ever:
+      brew rm npm
+      rm -rf #{HOMEBREW_PREFIX}/npm
     EOS
   end
 end
