@@ -1,8 +1,8 @@
 require 'formula'
 
 class Npm <Formula
-  url 'http://registry.npmjs.org/npm/-/npm-0.2.14.tgz'
-  sha1 '88c16fb171dc155376e77278e13a996dd9225527'
+  url 'http://registry.npmjs.org/npm/-/npm-0.2.14-4.tgz'
+  sha1 '46e5a4e13efb55c57f730539e1feaa399e9c1ae5'
 
   homepage 'http://npmjs.org/'
   head 'git://github.com/isaacs/npm.git'
